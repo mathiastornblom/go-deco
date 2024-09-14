@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/mrmarble/deco/utils"
+	"go-deco/utils"
 )
 
 var (
@@ -59,19 +59,19 @@ type request struct {
 
 // EndpointArgs holds the url params to be sent
 type EndpointArgs struct {
-	form string
+	Form string
 }
 
 func (e *EndpointArgs) queryParams() url.Values {
 	q := make(url.Values)
 
-	q.Add("form", e.form)
+	q.Add("form", e.Form)
 	return q
 }
 
 func (c *Client) getPasswordKey() (*rsa.PublicKey, error) {
 	args := EndpointArgs{
-		form: "keys",
+		Form: "keys",
 	}
 	var passKey passwordKeyResponse
 	err := c.doPost(";stok=/login", args, readBody, &passKey)
@@ -89,7 +89,7 @@ func (c *Client) getPasswordKey() (*rsa.PublicKey, error) {
 
 func (c *Client) getSessionKey() (*rsa.PublicKey, uint, error) {
 	args := EndpointArgs{
-		form: "auth",
+		Form: "auth",
 	}
 	var passKey sessionKeyResponse
 	err := c.doPost(";stok=/login", args, readBody, &passKey)

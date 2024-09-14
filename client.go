@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mrmarble/deco/utils"
+	"go-deco/utils"
 )
 
 const (
@@ -157,7 +157,7 @@ func (c *Client) Authenticate(password string) error {
 		return err
 	}
 	args := EndpointArgs{
-		form: "login",
+		Form: "login",
 	}
 	var result loginResponse
 	err = c.doEncryptedPost(";stok=/login", args, loginJSON, true, &result)
@@ -171,7 +171,7 @@ func (c *Client) Authenticate(password string) error {
 // Performance returns the current cpu and mem usage.
 func (c *Client) Performance() (*PerfResp, error) {
 	var result PerfResp
-	err := c.doEncryptedPost(fmt.Sprintf(";stok=%s/admin/network", c.stok), EndpointArgs{form: "performance"}, readBody, false, &result)
+	err := c.doEncryptedPost(fmt.Sprintf(";stok=%s/admin/network", c.stok), EndpointArgs{Form: "performance"}, readBody, false, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +181,7 @@ func (c *Client) Performance() (*PerfResp, error) {
 // DeviceList returns the list of connected deco APs
 func (c *Client) DeviceList() (*DeviceListResp, error) {
 	var result DeviceListResp
-	err := c.doEncryptedPost(fmt.Sprintf(";stok=%s/admin/device", c.stok), EndpointArgs{form: "device_list"}, readBody, false, &result)
+	err := c.doEncryptedPost(fmt.Sprintf(";stok=%s/admin/device", c.stok), EndpointArgs{Form: "device_list"}, readBody, false, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (c *Client) ClientList() (*ClientListResp, error) {
 		Params:    map[string]interface{}{"device_mac": "default"},
 	}
 	jsonRequest, _ := json.Marshal(request)
-	err := c.doEncryptedPost(fmt.Sprintf(";stok=%s/admin/client", c.stok), EndpointArgs{form: "client_list"}, jsonRequest, false, &result)
+	err := c.doEncryptedPost(fmt.Sprintf(";stok=%s/admin/client", c.stok), EndpointArgs{Form: "client_list"}, jsonRequest, false, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func (c *Client) Reboot(macAddrs ...string) (map[string]interface{}, error) {
 	}
 
 	jsonRequest, _ := json.Marshal(request)
-	err := c.doEncryptedPost(fmt.Sprintf(";stok=%s/admin/device", c.stok), EndpointArgs{form: "system"}, jsonRequest, false, &result)
+	err := c.doEncryptedPost(fmt.Sprintf(";stok=%s/admin/device", c.stok), EndpointArgs{Form: "system"}, jsonRequest, false, &result)
 	if err != nil {
 		return nil, err
 	}

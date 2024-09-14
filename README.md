@@ -1,6 +1,6 @@
-# TP-Link Deco M4 API Wrapper ![](https://img.shields.io/github/go-mod/go-version/MrMarble/deco)
+# TP-Link Deco API Wrapper
 
-This Go package provides a basic API wrapper for the tp-link M4 mesh router
+This Go package provides a basic API wrapper for the tp-link deco mesh routers
 
 ## Available methods
 
@@ -9,6 +9,4 @@ This Go package provides a basic API wrapper for the tp-link M4 mesh router
 - [x] Custom: Make a custom request to the router
 - [x] DeviceList: Get connected Decos
 - [x] Reboot: Reboot Deco mesh node(s)
-- [ ] Wan: Get information about wan
-
-`TODO: look through the firmware for more endpoints`
+- [x] Wan: Get information about wan

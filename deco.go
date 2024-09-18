@@ -156,6 +156,9 @@ func (c *Client) doPost(path string, params EndpointArgs, body []byte, result in
 	if err != nil {
 		return err
 	}
+		if res.StatusCode != 200  {
+		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	}
 
 	defer res.Body.Close()
 

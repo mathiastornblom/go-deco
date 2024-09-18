@@ -13,6 +13,7 @@ var (
 	// {"operation": "read"}
 	readBody []byte = []byte{123, 34, 111, 112, 101, 114, 97, 116, 105, 111, 110, 34, 58, 34, 114, 101, 97, 100, 34, 125}
 )
+var applicationVersion = "1.0.1"
 
 type request struct {
     Operation string                 `json:"operation,omitempty"`
@@ -22,14 +23,21 @@ type request struct {
 func main() {
 	host := flag.String("host", "tplinkdeco.net", "The host address of the Deco-m4 API (default: tplinkdeco.net)")
 	password := flag.String("password", "", "The password for authentication")
+	version := flag.Bool("version", false, "Print the application version")
 	flag.Parse()
+
+	if *version {
+		fmt.Printf("Application version: %s\n", applicationVersion)
+		os.Exit(0)
+	}
 
 	if *password == "" {
 		fmt.Println("Usage: --host <host> --password <password>")
+		fmt.Println("Usage: --version")
 		os.Exit(1)
 	}
 
-	fmt.Printf("Host: %s, Password: %s\n", *host, *password) // Debugging line
+	fmt.Printf("Host: %s, Password: %s\nVersion: %s\n", *host, *password, applicationVersion) 
 
 	c := deco.New(*host)
 	err := c.Authenticate(*password)
@@ -37,7 +45,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-if _, err := printPerformance(c); err != nil {
+ if _, err := printPerformance(c); err != nil {
 		log.Println("Error printing performance:", err)
 	}
 	if _, err := printDeviceList(c); err != nil {
@@ -49,8 +57,11 @@ if _, err := printPerformance(c); err != nil {
 	if _, err := printWLAN(c); err != nil {
 		log.Println("Error printing WLAN:", err)
 	}
-	if _, err := printLAN(c); err != nil {
-		log.Println("Error printing LAN:", err)
+	if _, err := printLANipv4(c); err != nil {
+		log.Println("Error printing LAN ipv4:", err)
+	}
+		 		if _, err := printLANipv6(c); err != nil {
+		log.Println("Error printing LAN ipv6:", err)
 	}
 	if _, err := printWAN(c); err != nil {
 		log.Println("Error printing WAN:", err)
@@ -58,20 +69,14 @@ if _, err := printPerformance(c); err != nil {
 	if _, err := printInternet(c); err != nil {
 		log.Println("Error printing internet:", err)
 	}
-	if _, err := printModel(c); err != nil {
-		log.Println("Error printing model:", err)
-	}
-	if _, err := printEnviroment(c); err != nil {
-		log.Println("Error printing environment:", err)
-	}
-	if _, err := printStatus(c); err != nil {
-		log.Println("Error printing status:", err)
-	}
-	if _, err := printFirmware(c); err != nil {
-		log.Println("Error printing firmware:", err)
+	if _, err := printMode(c); err != nil {
+		log.Println("Error printing mode:", err)
 	}
 	if _, err := printAdvanced(c); err != nil {
 		log.Println("Error printing advanced settings:", err)
+	}
+		if _, err := printDHCPDial(c); err != nil {
+		log.Println("Error printing DHCP Dial:", err)
 	}
 }
 
@@ -132,9 +137,32 @@ func printWLAN(c *deco.Client) (string, error){
 	return string(jsonData), nil
 }
 
-func printLAN(c *deco.Client) (string, error){
-	fmt.Println("[+] LAN")
-	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "lan_ip"}, readBody)
+func printLANipv4(c *deco.Client) (string, error){
+	fmt.Println("[+] LAN ipv4")
+			request := request{
+		Operation: "read",
+		Params:    map[string]interface{}{"device_mac": "default"},
+	}
+	jsonRequest, _ := json.Marshal(request)
+	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "lan_ip"}, jsonRequest)
+	if err != nil {	
+		return "", err
+	}
+	// Print response as json
+	jsonData, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Println(string(jsonData))
+	fmt.Println()
+	return string(jsonData), nil
+}
+
+func printLANipv6(c *deco.Client) (string, error){
+	fmt.Println("[+] LAN ipv6")
+			request := request{
+		Operation: "read",
+		Params:    map[string]interface{}{"device_mac": "default"},
+	}
+	jsonRequest, _ := json.Marshal(request)
+	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "ipv6"}, jsonRequest)
 	if err != nil {	
 		return "", err
 	}
@@ -171,49 +199,10 @@ func printInternet(c *deco.Client) (string, error){
 	return string(jsonData), nil
 }
 
-func printModel(c *deco.Client) (string, error){
-	fmt.Println("[+] Model")
-	result, err := c.Custom("/admin/device", deco.EndpointArgs{Form: "model"}, readBody)
+func printMode(c *deco.Client) (string, error){
+	fmt.Println("[+] Mode")
+	result, err := c.Custom("/admin/device", deco.EndpointArgs{Form: "mode"}, readBody)
 	if err != nil {
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-func printEnviroment(c *deco.Client) (string, error){
-	fmt.Println("[+] Enviroment")
-	result, err := c.Custom("/admin/system", deco.EndpointArgs{Form: "envar"}, readBody)
-	if err != nil {
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-func printStatus(c *deco.Client) (string, error){
-	fmt.Println("[+] Status")
-	result, err := c.Custom("/admin/status", deco.EndpointArgs{Form: "all"}, readBody)
-	if err != nil {	
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-func printFirmware(c *deco.Client) (string, error) {
-	fmt.Println("[+] Firmware")
-	result, err := c.Custom("/admin/firmware", deco.EndpointArgs{Form: "upgrade"}, readBody)
-	if err != nil {	
 		return "", err
 	}
 	// Print response as json
@@ -226,6 +215,19 @@ func printFirmware(c *deco.Client) (string, error) {
 func printAdvanced(c *deco.Client) (string, error){
 	fmt.Println("[+] Advanced")
 	result, err := c.Custom("/admin/wireless", deco.EndpointArgs{Form: "power"}, readBody)
+	if err != nil {
+		return "", err
+	}
+	// Print response as json
+	jsonData, _ := json.MarshalIndent(result, "", "  ")
+	fmt.Println(string(jsonData))
+	fmt.Println()
+	return string(jsonData), nil
+}
+
+func printDHCPDial(c *deco.Client) (string, error){
+	fmt.Println("[+] DHCP Dial")
+	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "dhcp_dial"}, readBody)
 	if err != nil {
 		return "", err
 	}

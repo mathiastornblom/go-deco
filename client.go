@@ -164,8 +164,11 @@ func (c *Client) Authenticate(password string) error {
 	if err != nil {
 		return err
 	}
-	c.stok = result.Result.Stok
-	return nil
+	if result.ErrCode != -5002 && result.Result.Stok != "" {
+		c.stok = result.Result.Stok
+		return nil
+	}
+	return fmt.Errorf("authentication failed: %w", err)
 }
 
 // Performance returns the current cpu and mem usage.

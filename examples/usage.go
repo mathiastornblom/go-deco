@@ -9,15 +9,17 @@ import (
 
 	"go-deco"
 )
+
 var (
 	// {"operation": "read"}
-	readBody []byte = []byte{123, 34, 111, 112, 101, 114, 97, 116, 105, 111, 110, 34, 58, 34, 114, 101, 97, 100, 34, 125}
+	readBody = []byte(`{"operation": "read"}`)
 )
-var applicationVersion = "1.0.1"
+
+var applicationVersion = "1.0.2"
 
 type request struct {
-    Operation string                 `json:"operation,omitempty"`
-    Params    map[string]interface{} `json:"params,omitempty"`
+	Operation string                 `json:"operation,omitempty"`
+	Params    map[string]interface{} `json:"params,omitempty"`
 }
 
 func main() {
@@ -37,203 +39,64 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Host: %s, Password: %s\nVersion: %s\n", *host, *password, applicationVersion) 
+	fmt.Printf("Host: %s, Password: %s\nVersion: %s\n", *host, *password, applicationVersion)
 
 	c := deco.New(*host)
 	err := c.Authenticate(*password)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatalf("Authentication failed: %s", err.Error())
 	}
 
- if _, err := printPerformance(c); err != nil {
-		log.Println("Error printing performance:", err)
+	endpoints := []struct {
+		description string
+		endpoint    string
+		form        string
+		body        []byte
+	}{
+		{"Device list", "/admin/device", "device_list", readBody},
+		{"Performance", "/admin/network", "performance", readBody},
+		{"Client list", "/admin/client", "client_list", createRequestBody("default")},
+		{"WLAN", "/admin/wireless", "wlan", readBody},
+		{"LAN ipv4", "/admin/network", "lan_ip", createRequestBody("default")},
+		{"LAN ipv6", "/admin/network", "ipv6", createRequestBody("default")},
+		{"WAN", "/admin/network", "wan_ipv4", readBody},
+		{"Internet", "/admin/network", "internet", readBody},
+		{"Mode", "/admin/device", "mode", readBody},
+		{"Advanced", "/admin/wireless", "power", readBody},
+		{"DHCP Dial", "/admin/network", "dhcp_dial", readBody},
 	}
-	if _, err := printDeviceList(c); err != nil {
-		log.Println("Error printing device list:", err)
-	}
-	if _, err := printClientList(c); err != nil {
-		log.Println("Error printing client list:", err)
-	}
-	if _, err := printWLAN(c); err != nil {
-		log.Println("Error printing WLAN:", err)
-	}
-	if _, err := printLANipv4(c); err != nil {
-		log.Println("Error printing LAN ipv4:", err)
-	}
-		 		if _, err := printLANipv6(c); err != nil {
-		log.Println("Error printing LAN ipv6:", err)
-	}
-	if _, err := printWAN(c); err != nil {
-		log.Println("Error printing WAN:", err)
-	}
-	if _, err := printInternet(c); err != nil {
-		log.Println("Error printing internet:", err)
-	}
-	if _, err := printMode(c); err != nil {
-		log.Println("Error printing mode:", err)
-	}
-	if _, err := printAdvanced(c); err != nil {
-		log.Println("Error printing advanced settings:", err)
-	}
-		if _, err := printDHCPDial(c); err != nil {
-		log.Println("Error printing DHCP Dial:", err)
+
+	for _, ep := range endpoints {
+		printEndpointData(c, ep.description, ep.endpoint, ep.form, ep.body)
 	}
 }
 
-func printPerformance(c *deco.Client) (string, error){
-	fmt.Println("[+] Performance")
-	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "performance"}, readBody)
-	if err != nil {
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-func printDeviceList(c *deco.Client) (string, error){
-	fmt.Println("[+] Device list")
-	result, err := c.Custom("/admin/device", deco.EndpointArgs{Form: "device_list"}, readBody)
-	if err != nil {
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-	func printClientList(c *deco.Client) (string, error){
-	fmt.Println("[+] Client list")
-		request := request{
+func createRequestBody(deviceMAC string) []byte {
+	request := request{
 		Operation: "read",
-		Params:    map[string]interface{}{"device_mac": "default"},
+		Params:    map[string]interface{}{"device_mac": deviceMAC},
 	}
 	jsonRequest, _ := json.Marshal(request)
-	result, err := c.Custom("/admin/client", deco.EndpointArgs{Form: "client_list"}, jsonRequest)
-	if err != nil {			
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
+	return jsonRequest
 }
 
-func printWLAN(c *deco.Client) (string, error){
-	fmt.Println("[+] WLAN")
-	result, err := c.Custom("/admin/wireless", deco.EndpointArgs{Form: "wlan"}, readBody)
-	if err != nil {			
-		return "", err
+func printEndpointData(c *deco.Client, description, endpoint, form string, body []byte) {
+	fmt.Printf("[+] %s\n", description)
+	jsonData, err := fetchAndPrintJSON(c, endpoint, form, body)
+	if err != nil {
+		log.Printf("Error printing %s: %s", description, err.Error())
+		return
 	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
+	fmt.Println(jsonData)
 	fmt.Println()
-	return string(jsonData), nil
 }
 
-func printLANipv4(c *deco.Client) (string, error){
-	fmt.Println("[+] LAN ipv4")
-			request := request{
-		Operation: "read",
-		Params:    map[string]interface{}{"device_mac": "default"},
-	}
-	jsonRequest, _ := json.Marshal(request)
-	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "lan_ip"}, jsonRequest)
-	if err != nil {	
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-func printLANipv6(c *deco.Client) (string, error){
-	fmt.Println("[+] LAN ipv6")
-			request := request{
-		Operation: "read",
-		Params:    map[string]interface{}{"device_mac": "default"},
-	}
-	jsonRequest, _ := json.Marshal(request)
-	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "ipv6"}, jsonRequest)
-	if err != nil {	
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-func printWAN(c *deco.Client) (string, error){
-	fmt.Println("[+] WAN")
-	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "wan_ipv4"}, readBody)
-	if err != nil {	
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-func printInternet(c *deco.Client) (string, error){
-	fmt.Println("[+] Internet")
-	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "internet"}, readBody)
-	if err != nil {	
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-func printMode(c *deco.Client) (string, error){
-	fmt.Println("[+] Mode")
-	result, err := c.Custom("/admin/device", deco.EndpointArgs{Form: "mode"}, readBody)
+func fetchAndPrintJSON(c *deco.Client, endpoint, form string, body []byte) (string, error) {
+	result, err := c.Custom(endpoint, deco.EndpointArgs{Form: form}, body)
 	if err != nil {
 		return "", err
 	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
 
-func printAdvanced(c *deco.Client) (string, error){
-	fmt.Println("[+] Advanced")
-	result, err := c.Custom("/admin/wireless", deco.EndpointArgs{Form: "power"}, readBody)
-	if err != nil {
-		return "", err
-	}
-	// Print response as json
 	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
-	return string(jsonData), nil
-}
-
-func printDHCPDial(c *deco.Client) (string, error){
-	fmt.Println("[+] DHCP Dial")
-	result, err := c.Custom("/admin/network", deco.EndpointArgs{Form: "dhcp_dial"}, readBody)
-	if err != nil {
-		return "", err
-	}
-	// Print response as json
-	jsonData, _ := json.MarshalIndent(result, "", "  ")
-	fmt.Println(string(jsonData))
-	fmt.Println()
 	return string(jsonData), nil
 }

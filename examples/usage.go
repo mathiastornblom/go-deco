@@ -15,7 +15,7 @@ var (
 	readBody = []byte(`{"operation": "read"}`)
 )
 
-var applicationVersion = "1.0.3"
+var applicationVersion = "1.0.4"
 
 type request struct {
 	Operation string                 `json:"operation,omitempty"`
@@ -93,10 +93,13 @@ func main() {
 		}{
 			{"Device list", "/admin/device", "device_list", readBody},
 			{"Performance", "/admin/network", "performance", readBody},
-			{"Client list", "/admin/client", "client_list", createRequestBody("default")},
+			{"Client list default", "/admin/client", "client_list", createRequestBody("default")},
+			{"Client list MAC", "/admin/client", "client_list", createRequestBody(device.DeviceMAC)},
 			{"WLAN", "/admin/wireless", "wlan", readBody},
-			{"LAN ipv4", "/admin/network", "lan_ip", createRequestBody("default")},
-			{"LAN ipv6", "/admin/network", "ipv6", createRequestBody("default")},
+			{"LAN ipv4 default", "/admin/network", "lan_ip", createRequestBody("default")},
+			{"LAN ipv6 default", "/admin/network", "ipv6", createRequestBody("default")},
+			{"LAN ipv4 MAC", "/admin/network", "lan_ip", createRequestBody(device.DeviceMAC)},
+			{"LAN ipv6 MAC", "/admin/network", "ipv6", createRequestBody(device.DeviceMAC)},
 			{"WAN", "/admin/network", "wan_ipv4", readBody},
 			{"Internet", "/admin/network", "internet", readBody},
 			{"Mode", "/admin/device", "mode", readBody},
